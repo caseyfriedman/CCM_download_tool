@@ -136,7 +136,7 @@ def calculate_total_articles() -> list[str]:
             
 def crawl_and_download(links: list[str]):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-    article_counter = 1
+    article_counter = 0
     link_counter = 0
 
     fail_list = []
@@ -152,6 +152,7 @@ def crawl_and_download(links: list[str]):
             continue
         download_webpage_to_pdf(link, pdf_filename, fail_list)
         article_counter += 1
+
 
     print(f"Finished crawling.")
     print(f"Found {link_counter} links")
