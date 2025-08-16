@@ -4,10 +4,7 @@ import os
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-import logging
-
 from tqdm import tqdm
-
 from weasyprint import HTML, default_url_fetcher
 
 BASE_URL = "https://coloradocommunitymedia.com/author/"
@@ -15,13 +12,6 @@ BASE_URL = "https://coloradocommunitymedia.com/author/"
 AUTHORS = ["mckenna-harford", "mharford"]
 
 OUTPUT_FOLDER = "downloaded_articles"
-
-# Optional: configure path for wkhtmltopdf if not in PATH
-# pdfkit_config = pdfkit.configuration(wkhtmltopdf=r"C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe")
-path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-
-options = {'encoding': 'UTF-8', "enable-local-file-access": ""}
 
 def extract_and_clean_html(html, url):
     """Extracts <main> content, removes <aside> tags and everything after jp-relatedposts."""
@@ -69,19 +59,8 @@ def download_webpage_to_pdf(url, output_filename, faillist: list[str]):
         response.raise_for_status()
 
         cleaned_html = extract_and_clean_html(response.text, url)
-
-        #temp_html = output_filename.replace(".pdf", ".html")
-        #with open(temp_html, "w", encoding="utf-8") as file:
-        #    file.write(cleaned_html)
-
-        #HTML(string=r'<img src="https://i0.wp.com//coloradocommunitymedia.com/wp-content/uploads/2023/12/image-113.png?fit=780%2C483&ssl=1 " alt="hi"/>', url_fetcher =custom_url_fetcher2).write_pdf(output_filename)
-        #HTML(url=url).write_pdf(output_filename)
-
         HTML(string=cleaned_html, base_url=url, url_fetcher =custom_url_fetcher2).write_pdf(output_filename)
-        #pdfkit.from_string(cleaned_html, output_filename, configuration=config, options=options)
-        #pdfkit.from_file(temp_html, output_filename, configuration=config, options=options)
-
-        #os.remove(temp_html)
+  
         tqdm.write(f"✅ Saved {url} -> {output_filename}")
     except requests.exceptions.RequestException as e:
         print(f"❌ Failed to download {url}: {e}")
