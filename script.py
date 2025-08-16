@@ -157,7 +157,9 @@ def crawl_and_download(links: list[str]):
     print(f"Finished crawling.")
     print(f"Found {link_counter} links")
     print(f"Downloaded {article_counter} articles")
-    print(f"Errored on {len(fail_list)} articles: {fail_list}")
+    print(f"Errored on {len(fail_list)} articles.")
+    if fail_list:
+        print(fail_list)
 
 def get_date_folder(url: str):
     match = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", url)
