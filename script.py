@@ -4,6 +4,11 @@ import os
 import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import logging
+
+from tqdm import tqdm
+
+from weasyprint import HTML, default_url_fetcher
 
 BASE_URL = "https://coloradocommunitymedia.com/author/"
 
@@ -16,9 +21,9 @@ OUTPUT_FOLDER = "downloaded_articles"
 path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 
-options = {'encoding': 'UTF-8'}
+options = {'encoding': 'UTF-8', "enable-local-file-access": ""}
 
-def extract_and_clean_html(html):
+def extract_and_clean_html(html, url):
     """Extracts <main> content, removes <aside> tags and everything after jp-relatedposts."""
     soup = BeautifulSoup(html, "html.parser")
 
@@ -42,14 +47,20 @@ def extract_and_clean_html(html):
         # Remove the related posts div itself
         related_div.decompose()
 
-        # Remove all siblings after this point
-        for sibling in list(main_tag.contents):
-            if sibling == related_div:
-                break
- 
+    # Build a new soup with DOCTYPE + html
+    new_soup = BeautifulSoup("<!DOCTYPE html><html></html>", "html.parser")
 
-    # Return prettified HTML (BeautifulSoup closes tags automatically)
-    return BeautifulSoup(str(main_tag), "html.parser").prettify()
+    # Copy over the <head> from the original
+    if soup.head:
+        new_soup.html.append(soup.head)
+
+    # Create a new <body> and insert the cleaned <main>
+    body = new_soup.new_tag("body")
+    body.append(main_tag)
+    new_soup.html.append(body)
+
+    return new_soup.prettify()
+ 
 
 def download_webpage_to_pdf(url, output_filename, faillist: list[str]):
     """Downloads an article, trims to </article>, cleans HTML, and saves as PDF."""
@@ -57,16 +68,21 @@ def download_webpage_to_pdf(url, output_filename, faillist: list[str]):
         response = requests.get(url, headers = {'User-agent': 'authorbot'}, timeout=10)
         response.raise_for_status()
 
-        cleaned_html = extract_and_clean_html(response.text)
+        cleaned_html = extract_and_clean_html(response.text, url)
 
-        temp_html = output_filename.replace(".pdf", ".html")
-        with open(temp_html, "w", encoding="utf-8") as file:
-            file.write(cleaned_html)
+        #temp_html = output_filename.replace(".pdf", ".html")
+        #with open(temp_html, "w", encoding="utf-8") as file:
+        #    file.write(cleaned_html)
 
-        pdfkit.from_file(temp_html, output_filename, configuration=config, options={'encoding': 'UTF-8' })
+        #HTML(string=r'<img src="https://i0.wp.com//coloradocommunitymedia.com/wp-content/uploads/2023/12/image-113.png?fit=780%2C483&ssl=1 " alt="hi"/>', url_fetcher =custom_url_fetcher2).write_pdf(output_filename)
+        #HTML(url=url).write_pdf(output_filename)
 
-        os.remove(temp_html)
-        print(f"✅ Saved {url} -> {output_filename}")
+        HTML(string=cleaned_html, base_url=url, url_fetcher =custom_url_fetcher2).write_pdf(output_filename)
+        #pdfkit.from_string(cleaned_html, output_filename, configuration=config, options=options)
+        #pdfkit.from_file(temp_html, output_filename, configuration=config, options=options)
+
+        #os.remove(temp_html)
+        tqdm.write(f"✅ Saved {url} -> {output_filename}")
     except requests.exceptions.RequestException as e:
         print(f"❌ Failed to download {url}: {e}")
         faillist.append(url)
@@ -92,12 +108,9 @@ def get_article_links_from_page(page_url):
 
     return links
 
-def crawl_and_download():
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-    article_counter = 1
-    link_counter = 0
-
-    fail_list = []
+def calculate_total_articles() -> list[str]:
+    total = set()
+    print(f"Calculating articles... {len(total)} found",  end='\r')
     for author in AUTHORS:
         page_number = 1
         while True:
@@ -106,25 +119,39 @@ def crawl_and_download():
             else:
                 page_url = urljoin(BASE_URL, f"{author}/page/{page_number}")
 
-            print(f"\n📄 Fetching {page_url} ...")
             links = get_article_links_from_page(page_url)
 
             if links is None:  # 404 found → stop
-                print("🚪 No more pages. Exiting.")
+                #print("🚪 No more pages. Exiting.")
                 break
 
-            for link in links:
-                link_counter += 1
-                print(f"The link is: {link}")
-                folder = os.path.join(OUTPUT_FOLDER, get_date_folder(link))
-                os.makedirs(folder, exist_ok=True)
-                short_name = get_filename_from_url(link)
-                pdf_filename = os.path.join(folder, f"{short_name}.pdf")
-                if os.path.isfile(pdf_filename):  #if it already exists, skip
-                    continue
-                download_webpage_to_pdf(link, pdf_filename, fail_list)
-                article_counter += 1
+            total.update(links)
+
+            print(f"Calculating articles... {len(total)} found",  end='\r')
             page_number += 1
+
+    print(f"Total Articles = {len(total)}.")
+    return list(total)
+
+            
+def crawl_and_download(links: list[str]):
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    article_counter = 1
+    link_counter = 0
+
+    fail_list = []
+   
+    for link in tqdm(links):
+        link_counter += 1
+        folder = os.path.join(OUTPUT_FOLDER, get_date_folder(link))
+        os.makedirs(folder, exist_ok=True)
+        short_name = get_filename_from_url(link)
+        pdf_filename = os.path.join(folder, f"{short_name}.pdf")
+        if os.path.isfile(pdf_filename):  #if it already exists, skip
+            tqdm.write(f"Skipping {link}. Already exists.")
+            continue
+        download_webpage_to_pdf(link, pdf_filename, fail_list)
+        article_counter += 1
 
     print(f"Finished crawling.")
     print(f"Found {link_counter} links")
@@ -144,5 +171,27 @@ def get_filename_from_url(url: str) -> str:
     return short_title.replace("-", "_")
 
 
+
+
+
+
+def custom_url_fetcher(url):
+    if url.startswith("https://"):
+        resp = requests.get(url)
+        resp.raise_for_status()
+        return {
+            "string": resp.content,
+            "mime_type": resp.headers.get("Content-Type")
+        }
+    return default_url_fetcher(url)
+
+
+def custom_url_fetcher2(url):
+    if url.startswith("https://i0.wp.com"):
+        return default_url_fetcher(url.replace("https:", "http:"))
+    return default_url_fetcher(url)
+
+
 if __name__ == "__main__":
-    crawl_and_download()
+    articles = calculate_total_articles()
+    crawl_and_download(articles)
