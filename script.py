@@ -88,7 +88,7 @@ def get_article_links_from_page(page_url):
 
 def calculate_total_articles() -> list[str]:
     total = set()
-    print(f"Calculating articles... {len(total)} found",  end='\r')
+    print(f"Searching for articles... {len(total)} found",  end='\r')
     for author in AUTHORS:
         page_number = 1
         while True:
@@ -105,7 +105,7 @@ def calculate_total_articles() -> list[str]:
 
             total.update(links)
 
-            print(f"Calculating articles... {len(total)} found",  end='\r')
+            print(f"Searching for articles... {len(total)} found",  end='\r')
             page_number += 1
 
     print(f"Total Articles = {len(total)}.")
@@ -150,10 +150,6 @@ def get_date_folder(url: str):
 def get_filename_from_url(url: str) -> str:
     short_title = url.split("/")[-2]
     return short_title.replace("-", "_")
-
-
-
-
 
 
 def custom_url_fetcher(url):
