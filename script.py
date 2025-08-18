@@ -94,6 +94,9 @@ def calculate_total_articles() -> list[str]:
         while True:
             if page_number == 1:
                 page_url = urljoin(BASE_URL, author)
+                if not doesAuthorExist(page_url):
+                    print(f"Author {author} not found.")
+                    break
             else:
                 page_url = urljoin(BASE_URL, f"{author}/page/{page_number}")
 
@@ -110,6 +113,15 @@ def calculate_total_articles() -> list[str]:
 
     print(f"Total Articles = {len(total)}.")
     return list(total)
+
+
+def doesAuthorExist(url: str) -> bool:
+    '''Any request to /author/{name} will return a 200 code, regardless of whether 
+    or not it's a real author. Need something else to check, perhaps just verify that the first '''
+    response = requests.get(url, headers = {'User-agent': 'authorbot'})
+    soup = BeautifulSoup(response.text, "html.parser")
+    return soup.find("h1", class_="page-title") is not None
+    
 
             
 def crawl_and_download(links: list[str]):
