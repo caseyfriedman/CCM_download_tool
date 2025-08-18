@@ -177,4 +177,7 @@ def print_intro():
 if __name__ == "__main__":
     print_intro()
     articles = calculate_total_articles()
-    crawl_and_download(articles)
+    if articles:
+        crawl_and_download(articles)
+    else:
+        print("No articles found. Executing script.")
