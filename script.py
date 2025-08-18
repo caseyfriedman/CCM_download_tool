@@ -88,7 +88,7 @@ def get_article_links_from_page(page_url):
 
 def calculate_total_articles() -> list[str]:
     total = set()
-    print(f"Searching for articles... {len(total)} found",  end='\r')
+    print(f"Searching for articles... {len(total)} found")
     for author in AUTHORS:
         page_number = 1
         while True:
