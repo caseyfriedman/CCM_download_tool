@@ -165,7 +165,7 @@ def custom_url_fetcher(url):
 
 def custom_url_fetcher2(url):
     if url.startswith("https://i0.wp.com"):
-        return default_url_fetcher(url.replace("https:", "http:"))
+        url = url.replace("https:", "http:")
     return default_url_fetcher(url)
 
 
