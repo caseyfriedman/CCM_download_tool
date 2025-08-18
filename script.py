@@ -145,8 +145,8 @@ def crawl_and_download(links: list[str]):
 
 
     print(f"Finished crawling.")
-    print(f"Found {link_counter} links")
-    print(f"Downloaded {article_counter} articles")
+    print(f"Found {link_counter} links.")
+    print(f"Downloaded {article_counter} articles.")
     print(f"Errored on {len(fail_list)} articles.")
     if fail_list:
         print(fail_list)
