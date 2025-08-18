@@ -169,6 +169,12 @@ def custom_url_fetcher2(url):
     return default_url_fetcher(url)
 
 
+def print_intro():
+    print(f"Executing script")
+    print(f"Searching for authors: {AUTHORS}")
+    
+
 if __name__ == "__main__":
+    print_intro()
     articles = calculate_total_articles()
     crawl_and_download(articles)
