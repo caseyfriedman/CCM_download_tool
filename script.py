@@ -8,7 +8,7 @@ from weasyprint import HTML, default_url_fetcher
 
 BASE_URL = "https://coloradocommunitymedia.com/author/"
 
-AUTHORS = ["mckenna-harford", "mharford"]
+AUTHORS = ["johnnyboy"]
 
 OUTPUT_FOLDER = "downloaded_articles"
 
@@ -86,14 +86,14 @@ def get_article_links_from_page(page_url):
 
     return links
 
-def calculate_total_articles() -> list[str]:
+def calculate_total_articles(url, authors) -> list[str]:
     total = set()
     print(f"Searching for articles... {len(total)} found")
-    for author in AUTHORS:
+    for author in authors:
         page_number = 1
         while True:
             if page_number == 1:
-                page_url = urljoin(BASE_URL, author)
+                page_url = urljoin(url, author)
                 if not doesAuthorExist(page_url):
                     print(f"Author {author} not found.")
                     break
@@ -188,7 +188,7 @@ def print_intro():
 
 if __name__ == "__main__":
     print_intro()
-    articles = calculate_total_articles()
+    articles = calculate_total_articles(BASE_URL, AUTHORS)
     if articles:
         crawl_and_download(articles)
     else:
