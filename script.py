@@ -175,10 +175,27 @@ def custom_url_fetcher(url):
     return default_url_fetcher(url)
 
 
+cache = {}
 def custom_url_fetcher2(url):
     if url.startswith("https://i0.wp.com"):
         url = url.replace("https:", "http:")
-    return default_url_fetcher(url)
+
+    
+    if url in cache:
+        return cache[url]
+    else:
+        resp = requests.get(url, stream=True, verify=True, headers = {'User-agent': 'authorbot'})
+
+        resp.raise_for_status()
+        ret =  {
+            "string": resp.content,
+            "mime_type": resp.headers.get("Content-Type")
+        }
+        cache[url] = ret
+        return ret
+    #return requests.get(url)
+
+    #return default_url_fetcher(url)
 
 
 def print_intro():
