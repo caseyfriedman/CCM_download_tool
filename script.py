@@ -110,7 +110,7 @@ def calculate_total_articles(url, authors) -> list[str]:
 
             print(f"Searching for articles... {len(total)} found",  end='\r')
             page_number += 1
-
+    print("")
     print(f"Total Articles = {len(total)}.")
     return list(total)
 
